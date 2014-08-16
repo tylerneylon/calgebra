@@ -13,6 +13,7 @@
 #define true  1
 #define false 0
 
+
 // Internal functions.
 
 #define data_size(nrows, ncols) (sizeof(float) * nrows * ncols)
@@ -20,6 +21,7 @@
 #define num_rows(A) (A->is_transposed ? A->ncols : A->nrows)
 #define elt(A, i, j) alg__elt(A, i, j)
 #define col_elt(A, i) elt(A, i, 0)
+
 
 // Public functions.
 

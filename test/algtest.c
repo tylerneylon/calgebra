@@ -6,6 +6,7 @@
 #include "calgebra.h"
 #include "test/ctest.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -66,9 +67,38 @@ int test_basic_ops() {
   return test_success;
 }
 
+// TODO Also test R.
+
+int test_QR() {
+  alg__Mat A = alg__alloc_matrix(2, 2);
+  memcpy(A->data, ((float[])
+         { -5,  2,
+            0,  6  }), 4 * sizeof(float));
+  alg__QR(A, NULL);
+
+  test_that(fabs(alg__elt(A, 0, 0)) == 1);
+  test_that(     alg__elt(A, 1, 0)  == 0);
+  test_that(fabs(alg__elt(A, 1, 1)) == 1);
+
+  memcpy(A->data, ((float[])
+         {  1,  9,
+            1,  7  }), 4 * sizeof(float));
+  alg__QR(A, NULL);
+
+  float x = alg__elt(A, 0, 0);
+  test_that(fabs(x - 1.0 / sqrtf(2))        < 0.001);
+  test_that(fabs(alg__dot_prod(A, 0, A, 1)) < 0.001);
+  test_that(fabs(alg__norm(A, 0) - 1)       < 0.001);
+  test_that(fabs(alg__norm(A, 1) - 1)       < 0.001);
+
+  alg__free_matrix(A);
+
+  return test_success;
+}
+
 int main(int argc, char **argv) {
   set_verbose(0);  // Set this to 1 while debugging a test.
   start_all_tests(argv[0]);
-  run_tests(test_basic_ops);
+  run_tests(test_basic_ops, test_QR);
   return end_all_tests();
 }
