@@ -18,9 +18,7 @@
 #define data_size(nrows, ncols) (sizeof(float) * nrows * ncols)
 #define num_cols(A) (A->is_transposed ? A->nrows : A->ncols)
 #define num_rows(A) (A->is_transposed ? A->ncols : A->nrows)
-#define elt(A, i, j) \
-  A->data[i * (A->is_transposed ? 1 : A->ncols) + \
-          j * (A->is_transposed ? A->ncols : 1)]
+#define elt(A, i, j) alg__elt(A, i, j)
 #define col_elt(A, i) elt(A, i, 0)
 
 // Public functions.
@@ -29,7 +27,11 @@
 
 alg__Mat alg__alloc_matrix(int nrows, int ncols) {
   alg__Mat M = malloc(sizeof(alg__MatStruct));
-  M->data    = malloc(data_size(nrows, ncols));
+  *M = (alg__MatStruct) {
+         .data  = malloc(data_size(nrows, ncols)),
+         .nrows = nrows,
+         .ncols = ncols,
+         .is_transposed = false };
   return M;
 }
 

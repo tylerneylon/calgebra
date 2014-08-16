@@ -24,7 +24,13 @@ alg__Mat alg__copy_matrix  (alg__Mat orig);
 void     alg__free_matrix  (alg__Mat m);
 
 // 2. Basic matrix operations.
-//    In the comments, we use A[i] to mean the ith column of A.
+      // In the comments, we use A[i] to mean the ith column of A.
+
+ 
+      // Use alg__elt(A, i, j) as either a value or variable (r- or l-value).
+#define  alg__elt(A, i, j) \
+  (A->data[i * (A->is_transposed ? 1 : A->ncols) + \
+           j * (A->is_transposed ? A->ncols : 1)])
 
       // Returns < A[i], B[j] >.
 float    alg__dot_prod             (alg__Mat A, int i, alg__Mat B, int j);

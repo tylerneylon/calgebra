@@ -51,7 +51,7 @@ out/ctest.o: test/ctest.c test/ctest.h | out
 out/calgebra.o: calgebra.c calgebra.h | out
 	$(cc) -o $@ -c $<
 
-$(tests) : out/% : test/%.c out/calgebra.o
+$(tests) : out/% : test/%.c out/calgebra.o out/ctest.o
 	$(cc) -o $@ $^
 
 # Listing this special-name rule prevents the deletion of intermediate files.
