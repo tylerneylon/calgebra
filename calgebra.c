@@ -25,7 +25,7 @@
 
 // Public functions.
 
-// 1. Matrix allocation and copying.
+// 1. Create. copy, destroy, or print a matrix.
 
 alg__Mat alg__alloc_matrix(int nrows, int ncols) {
   alg__Mat M = malloc(sizeof(alg__MatStruct));
@@ -46,6 +46,26 @@ alg__Mat alg__copy_matrix(alg__Mat orig) {
 void alg__free_matrix(alg__Mat M) {
   free(M->data);
   free(M);
+}
+
+char *alg__matrix_as_str(alg__Mat M) {
+  char **row_strs = alloca(num_rows(M) * sizeof(char *));
+  size_t sum_bytes = 1;  // Start at 1 for the null terminator.
+  for (int row = 0; row < num_rows(M); ++row) {
+    size_t buf_len = 16 * (num_cols(M) + 1);
+    char *s = row_strs[row] = alloca(buf_len);
+    char *s_end = s + buf_len;
+    s += snprintf(s, s_end - s, "( ");
+    for (int col = 0; col < num_cols(M); ++col) {
+      s += snprintf(s, s_end - s, "%5.2g ", elt(M, row, col));
+    }
+    s += snprintf(s, s_end - s, ")\n");
+    sum_bytes += (s - row_strs[row]);
+  }
+  char *sum_s = malloc(sum_bytes);
+  char *s     = sum_s;
+  for (int r = 0; r < num_rows(M); ++r) s = stpcpy(s, row_strs[r]);
+  return sum_s;
 }
 
 // 2. Basic matrix operations.
@@ -101,8 +121,12 @@ void alg__QR(alg__Mat Q, alg__Mat R) {
 // 4. Optimizations.
 
 void alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
-  if (num_cols(A) != num_cols(b)) {
-    fprintf(stderr, "Error: A and b must have the same number of columns.\n");
+  if (num_rows(A) != num_rows(b)) {
+    fprintf(stderr, "Error: A and b must have the same number of rows.\n");
+    return;
+  }
+  if (num_cols(A) != num_rows(x) || num_cols(x) != 1) {
+    fprintf(stderr, "Error: expected x to have size #cols(A) x 1.\n");
     return;
   }
   if (x == NULL) {

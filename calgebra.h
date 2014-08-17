@@ -17,11 +17,14 @@ typedef struct {
   int is_transposed;
 } alg__MatStruct, *alg__Mat;
 
-// 1. Matrix allocation and copying.
+// 1. Create. copy, destroy, or print a matrix.
 
-alg__Mat alg__alloc_matrix (int nrows, int ncols);
-alg__Mat alg__copy_matrix  (alg__Mat orig);
-void     alg__free_matrix  (alg__Mat m);
+alg__Mat alg__alloc_matrix  (int nrows, int ncols);
+alg__Mat alg__copy_matrix   (alg__Mat orig);
+void     alg__free_matrix   (alg__Mat M);
+
+      // Returns a newly-allocated string; caller must free it.
+char *   alg__matrix_as_str (alg__Mat M);
 
 // 2. Basic matrix operations.
       // In the comments, we use A[i] to mean the ith column of A.

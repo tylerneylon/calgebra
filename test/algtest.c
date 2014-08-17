@@ -8,6 +8,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int test_basic_ops() {
@@ -96,9 +97,31 @@ int test_QR() {
   return test_success;
 }
 
+int test_l2_min() {
+  // Set a matrix with rows orthogonal to (1 -1 -1).
+  alg__Mat A = alg__alloc_matrix(2, 3);
+  memcpy(A->data, ((float[])
+         {  5,  2,  3,
+            1,  4, -3 }), 6 * sizeof(float));
+  alg__Mat b = alg__alloc_matrix(2, 1);
+  memcpy(A->data, ((float[]){  7,  5 }), 2 * sizeof(float));
+  alg__Mat x = alg__alloc_matrix(3, 1);
+
+  alg__l2_min(A, b, x);
+
+  // TEMP
+  char *s = alg__matrix_as_str(x);
+  printf("\nx=\n%s", s);
+  free(s);
+
+  // TODO HERE
+
+  return test_success;
+}
+
 int main(int argc, char **argv) {
   set_verbose(0);  // Set this to 1 while debugging a test.
   start_all_tests(argv[0]);
-  run_tests(test_basic_ops, test_QR);
+  run_tests(test_basic_ops, test_QR, test_l2_min);
   return end_all_tests();
 }
