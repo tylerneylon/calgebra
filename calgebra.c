@@ -39,6 +39,7 @@ alg__Mat alg__alloc_matrix(int nrows, int ncols) {
 
 alg__Mat alg__copy_matrix(alg__Mat orig) {
   alg__Mat M = alg__alloc_matrix(orig->nrows, orig->ncols);
+  M->is_transposed = orig->is_transposed;
   memcpy(M->data, orig->data, data_size(M->nrows, M->ncols));
   return M;
 }
@@ -133,16 +134,13 @@ void alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
     fprintf(stderr, "Error: expected output matrix x to be pre-allocated.\n");
     return;
   }
-  alg__Mat Q = alg__copy_matrix(A);
 
   // We want to work with rows of A (and Q).
   A->is_transposed = !A->is_transposed;
-
-  // We want to orthonormalize the rows of Q.
-  Q->is_transposed = true;
+  alg__Mat Q = alg__copy_matrix(A);
   alg__QR(Q, NULL);
 
-  for (int i = 0; i < A->nrows; ++i) {
+  for (int i = 0; i < num_cols(A); ++i) {
     float a_i_q_i = alg__dot_prod(A, i, Q, i);
     float a_i_x   = alg__dot_prod(A, i, x, 0);
     float alpha = (col_elt(b, i) - a_i_x) / a_i_q_i;

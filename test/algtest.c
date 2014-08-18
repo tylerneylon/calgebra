@@ -104,17 +104,16 @@ int test_l2_min() {
          {  5,  2,  3,
             1,  4, -3 }), 6 * sizeof(float));
   alg__Mat b = alg__alloc_matrix(2, 1);
-  memcpy(A->data, ((float[]){  7,  5 }), 2 * sizeof(float));
+  memcpy(b->data, ((float[]){  7,  5 }), 2 * sizeof(float));
   alg__Mat x = alg__alloc_matrix(3, 1);
 
   alg__l2_min(A, b, x);
 
-  // TEMP
-  char *s = alg__matrix_as_str(x);
-  printf("\nx=\n%s", s);
-  free(s);
+  // We expect the answer x = (1 1 0)^T.
 
-  // TODO HERE
+  test_that(fabs(alg__elt(x, 0, 0) - 1) < 0.001);
+  test_that(fabs(alg__elt(x, 1, 0) - 1) < 0.001);
+  test_that(fabs(alg__elt(x, 2, 0) - 0) < 0.001);
 
   return test_success;
 }
