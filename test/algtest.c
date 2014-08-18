@@ -97,6 +97,56 @@ int test_QR() {
   return test_success;
 }
 
+int test_lp_pt1() {
+  alg__Mat A = alg__alloc_matrix(1, 2);
+  memcpy(A->data, ((float[]){ 1, 5 }), 2 * sizeof(float));
+
+  alg__Mat b = alg__alloc_matrix(1, 1);
+  memcpy(b->data, ((float[]){ 5 }), sizeof(float));
+
+  alg__Mat c = alg__alloc_matrix(1, 2);
+  memcpy(c->data, ((float[]){ 1, 1 }), 2 * sizeof(float));
+
+  alg__Mat x = alg__alloc_matrix(2, 1);
+
+  alg__run_lp(A, b, x, c);
+
+  // We expect the answer x = (0 1)^T.
+
+  test_that(fabs(alg__elt(x, 0, 0) - 0) < 0.001);
+  test_that(fabs(alg__elt(x, 1, 0) - 1) < 0.001);
+
+  return test_success;
+}
+
+int test_lp_pt2() {
+  alg__Mat A = alg__alloc_matrix(3, 5);
+  memcpy(A->data, ((float[])
+        {  1,  0,  0,  0,  1,
+           0,  1,  0,  4, -5,
+           0,  0,  1, -4,  1}), 3 * 5 * sizeof(float));
+
+  alg__Mat b = alg__alloc_matrix(3, 1);
+  memcpy(b->data, ((float[]){ 7, -7, -5 }), 3 * sizeof(float));
+
+  alg__Mat c = alg__alloc_matrix(1, 2);
+  memcpy(c->data, ((float[]){ 3, 2 }), 2 * sizeof(float));
+
+  alg__Mat x = alg__alloc_matrix(5, 1);
+
+  alg__run_lp(A, b, x, c);
+
+  // We expect the answer x = (0 0 0 2 3)^T.
+
+  float ans[] = { 0, 0, 0, 2, 3 };
+
+  for (int i = 0; i < 5; ++i) {
+    test_that(fabs(alg__elt(x, i, 0) - ans[i]) < 0.001);
+  }
+
+  return test_success;
+}
+
 int test_l2_min() {
   // Set a matrix with rows orthogonal to (1 -1 -1).
   alg__Mat A = alg__alloc_matrix(2, 3);
@@ -121,6 +171,7 @@ int test_l2_min() {
 int main(int argc, char **argv) {
   set_verbose(0);  // Set this to 1 while debugging a test.
   start_all_tests(argv[0]);
-  run_tests(test_basic_ops, test_QR, test_l2_min);
+  run_tests(test_basic_ops, test_QR,
+            test_lp_pt1, test_lp_pt2, test_l2_min);
   return end_all_tests();
 }

@@ -121,6 +121,10 @@ void alg__QR(alg__Mat Q, alg__Mat R) {
 
 // 4. Optimizations.
 
+void alg__l1_min(alg__Mat A, alg__Mat b, alg__Mat x) {
+  // TODO
+}
+
 void alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
   if (num_rows(A) != num_rows(b)) {
     fprintf(stderr, "Error: A and b must have the same number of rows.\n");
@@ -152,3 +156,6 @@ void alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
   alg__free_matrix(Q);
 }
 
+void alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
+  // TODO
+}
