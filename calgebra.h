@@ -17,6 +17,13 @@ typedef struct {
   int is_transposed;
 } alg__MatStruct, *alg__Mat;
 
+typedef enum {
+  alg__status_ok,
+  alg__status_no_soln,
+  alg__status_unbdd_soln,
+  alg__status_input_error
+} alg__Status;
+
 // 1. Create. copy, destroy, or print a matrix.
 
 alg__Mat alg__alloc_matrix  (int nrows, int ncols);
@@ -32,8 +39,8 @@ char *   alg__matrix_as_str (alg__Mat M);
  
       // Use alg__elt(A, i, j) as either a value or variable (r- or l-value).
 #define  alg__elt(A, i, j) \
-  (A->data[i * (A->is_transposed ? 1 : A->ncols) + \
-           j * (A->is_transposed ? A->ncols : 1)])
+  (A->data[(i) * (A->is_transposed ? 1 : A->ncols) + \
+           (j) * (A->is_transposed ? A->ncols : 1)])
 
       // Returns < A[i], B[j] >.
 float    alg__dot_prod             (alg__Mat A, int i, alg__Mat B, int j);
@@ -66,4 +73,4 @@ void alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x);
 // Solve a general linear programming problem.
 // Specifically, find x that minimizes (c^T * x) with Ax=b, x >= 0.
 // The l1_min function above is a wrapper around this.
-void alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c);
+alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c);
