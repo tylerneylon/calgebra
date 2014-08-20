@@ -255,12 +255,37 @@ int test_lp_errors() {
   return test_success;
 }
 
+int test_l1_min() {
+  // The conceptual problem has the feasible solution set
+  // (1 1 0) + t(-1 -1 8), specified with
+  // A = (4 4 1)  b = (8)
+  //     (8 0 1)      (8)
+  // For this set, x = (1 1 0)^T minimizes ||x||_1.
+  alg__Mat A = alg__alloc_matrix(2, 3);
+  memcpy(A->data, ((float[])
+         {  4,  4,  1,
+            8,  0,  1 }), 6 * sizeof(float));
+  alg__Mat b = alg__alloc_matrix(2, 1);
+  memcpy(b->data, ((float[]){  8,  8 }), 2 * sizeof(float));
+  alg__Mat x = alg__alloc_matrix(3, 1);
+
+  alg__Status status = alg__l1_min(A, b, x);
+
+  test_that(status == alg__status_ok);
+
+  test_that(fabs(alg__elt(x, 0, 0) - 1) < 0.001);
+  test_that(fabs(alg__elt(x, 1, 0) - 1) < 0.001);
+  test_that(fabs(alg__elt(x, 2, 0) - 0) < 0.001);
+
+  return test_success;
+}
+
 int main(int argc, char **argv) {
   set_verbose(0);  // Set this to 1 while debugging a test.
   start_all_tests(argv[0]);
   run_tests(test_basic_ops, test_QR,
             test_lp_pt1, test_lp_pt2, test_l2_min,
             test_l2_error_cases, test_no_soln_cases,
-            test_lp_errors);
+            test_lp_errors, test_l1_min);
   return end_all_tests();
 }

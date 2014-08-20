@@ -230,7 +230,7 @@ alg__Status alg__l1_min(alg__Mat A, alg__Mat b, alg__Mat x) {
   }
 
   alg__Mat c = alg__alloc_matrix(num_cols(A2), 1);
-  for (int r = 0; r < num_rows(c); ++r) col_elt(c, r) = (r % 2 ? -1 : 1);
+  for (int r = 0; r < num_rows(c); ++r) col_elt(c, r) = 1;
 
   alg__Mat x2 = alg__alloc_matrix(num_cols(A2), 1);
 
