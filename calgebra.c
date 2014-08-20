@@ -199,6 +199,9 @@ alg__Status alg__QR(alg__Mat Q, alg__Mat R) {
     alg__err_str = "Expected alg__QR input to be a tall or square matrix.";
     return alg__status_input_error;
   }
+
+  if (R) memset(R->data, 0, sizeof(float) * num_rows(R) * num_cols(R));
+
   alg__Status status = alg__status_ok;
   // Q starts off as an arbitrary tall-or-square matrix A.
   for (int i = 0; i < num_cols(Q); ++i) {
@@ -208,13 +211,14 @@ alg__Status alg__QR(alg__Mat Q, alg__Mat R) {
       continue;
     }
     alg__scale(1.0 / norm, Q, i);
+    if (R) elt(R, i, i) = norm;
     for (int j = i + 1; j < num_cols(Q); ++j) {
       float dot_prod = alg__dot_prod(Q, i, Q, j);
+      if (R) elt(R, i, j) = dot_prod;
       alg__mul_and_add(-dot_prod, Q, i, Q, j);
     }
   }
   return status;
-  // TODO Save the R values. This is not needed for L2-min, though.
 }
 
 // 4. Optimizations.

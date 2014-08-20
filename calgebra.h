@@ -5,8 +5,6 @@
 // A C library to solve some linear algebraic problems.
 //
 
-// TODO Add a way to get degeneracy or instability warnings.
-
 #pragma once
 
 // The element in the ith row and jth column (0-indexed), denoted

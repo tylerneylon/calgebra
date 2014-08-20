@@ -86,12 +86,35 @@ int test_QR() {
             1,  7  }), 4 * sizeof(float));
   alg__QR(A, NULL);
 
-  float x = alg__elt(A, 0, 0);
+  float x = fabs(alg__elt(A, 0, 0));
   test_that(fabs(x - 1.0 / sqrtf(2))        < 0.001);
   test_that(fabs(alg__dot_prod(A, 0, A, 1)) < 0.001);
   test_that(fabs(alg__norm(A, 0) - 1)       < 0.001);
   test_that(fabs(alg__norm(A, 1) - 1)       < 0.001);
 
+  memcpy(A->data, ((float[])
+         {  3, -6,
+            4, 17  }), 4 * sizeof(float));
+  alg__Mat R = alg__alloc_matrix(2, 2);
+  alg__QR(A, R);
+
+  // These test magnitude only since the column signs
+  // are not specified by the decomposition.
+  test_that(fabs(fabs(alg__elt(A, 0, 0)) - 0.6) < 0.001);
+  test_that(fabs(fabs(alg__elt(A, 1, 0)) - 0.8) < 0.001);
+  test_that(fabs(fabs(alg__elt(A, 0, 1)) - 0.8) < 0.001);
+  test_that(fabs(fabs(alg__elt(A, 1, 1)) - 0.6) < 0.001);
+
+  test_that(fabs(fabs(alg__elt(R, 0, 0)) -  5) < 0.001);
+  test_that(fabs(fabs(alg__elt(R, 1, 0)) -  0) < 0.001);
+  test_that(fabs(fabs(alg__elt(R, 0, 1)) - 10) < 0.001);
+  test_that(fabs(fabs(alg__elt(R, 1, 1)) - 15) < 0.001);
+
+  test_that(fabs(alg__dot_prod(A, 0, A, 1)) < 0.001);
+  test_that(fabs(alg__norm(A, 0) - 1)       < 0.001);
+  test_that(fabs(alg__norm(A, 1) - 1)       < 0.001);
+
+  alg__free_matrix(R);
   alg__free_matrix(A);
 
   return test_success;
