@@ -58,7 +58,7 @@ float    alg__norm                 (alg__Mat A, int i);
 // 3. Decompositions.
 
       // Provide a reduced QR decomposition; R may be NULL to ignore it.
-void     alg__QR(alg__Mat A_to_Q, alg__Mat R);
+void     alg__QR (alg__Mat A_to_Q, alg__Mat R);
 
 // 4. Optimizations.
 
@@ -67,10 +67,10 @@ void     alg__QR(alg__Mat A_to_Q, alg__Mat R);
 //    with the constraint   Ax = b.
 // The output x should be pre-allocated, including memory for the data.
 
-void alg__l1_min(alg__Mat A, alg__Mat b, alg__Mat x);
-void alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x);
+alg__Status alg__l1_min (alg__Mat A, alg__Mat b, alg__Mat x);
+alg__Status alg__l2_min (alg__Mat A, alg__Mat b, alg__Mat x);
 
 // Solve a general linear programming problem.
 // Specifically, find x that minimizes (c^T * x) with Ax=b, x >= 0.
 // The l1_min function above is a wrapper around this.
-alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c);
+alg__Status alg__run_lp (alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c);

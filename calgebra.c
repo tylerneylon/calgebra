@@ -193,22 +193,50 @@ void alg__QR(alg__Mat Q, alg__Mat R) {
 
 // 4. Optimizations.
 
-void alg__l1_min(alg__Mat A, alg__Mat b, alg__Mat x) {
-  // TODO
+alg__Status alg__l1_min(alg__Mat A, alg__Mat b, alg__Mat x) {
+  alg__Mat A2 = alg__alloc_matrix(num_rows(A), 2 * num_cols(A));
+  for (int r = 0; r < num_rows(A); ++r) {
+    for (int c = 0; c < num_cols(A); ++c) {
+      float src_val = elt(A, r, c);
+      elt(A2, r, 2 * c + 0) =  src_val;
+      elt(A2, r, 2 * c + 1) = -src_val;
+    }
+  }
+
+  alg__Mat c = alg__alloc_matrix(num_cols(A2), 1);
+  for (int r = 0; r < num_rows(c); ++r) col_elt(c, r) = (r % 2 ? -1 : 1);
+
+  alg__Mat x2 = alg__alloc_matrix(num_cols(A2), 1);
+
+  alg__Status status = alg__run_lp(A2, b, x2, c);
+
+  if (status == alg__status_ok) {
+    // Copy x2 over to x.
+    for (int r = 0; r < num_rows(x); ++r) {
+      col_elt(x, r) = col_elt(x2, 2 * r) - col_elt(x2, 2 * r + 1);
+    }
+  }
+
+  // Clean up.
+  alg__free_matrix(x2);
+  alg__free_matrix(c);
+  alg__free_matrix(A2);
+
+  return status;
 }
 
-void alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
+alg__Status alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
   if (num_rows(A) != num_rows(b)) {
     fprintf(stderr, "Error: A and b must have the same number of rows.\n");
-    return;
+    return alg__status_input_error;
   }
   if (num_cols(A) != num_rows(x) || num_cols(x) != 1) {
     fprintf(stderr, "Error: expected x to have size #cols(A) x 1.\n");
-    return;
+    return alg__status_input_error;
   }
   if (x == NULL) {
     fprintf(stderr, "Error: expected output matrix x to be pre-allocated.\n");
-    return;
+    return alg__status_input_error;
   }
 
   // We want to work with rows of A (and Q).
@@ -226,6 +254,8 @@ void alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
   // Clean up.
   A->is_transposed = !A->is_transposed;
   alg__free_matrix(Q);
+
+  return alg__status_ok;
 }
 
 alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
