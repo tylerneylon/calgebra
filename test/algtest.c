@@ -190,11 +190,41 @@ int test_l2_error_cases() {
   return test_success;
 }
 
+int test_no_soln_cases() {
+  // We'll set up Ax=b to have so solutions.
+  // Specifically, A=0 and b=1.
+
+  alg__Mat A = alg__alloc_matrix(1, 1);
+  *A->data = 0;
+  alg__Mat b = alg__alloc_matrix(1, 1);
+  *b->data = 1;
+  alg__Mat x = alg__alloc_matrix(1, 1);
+
+  alg__Status status;
+
+  status = alg__l1_min(A, b, x);
+  test_that(status == alg__status_no_soln);
+
+  status = alg__l2_min(A, b, x);
+  test_that(status == alg__status_no_soln);
+
+  alg__Mat c = alg__alloc_matrix(1, 1);
+  status = alg__run_lp(A, b, x, c);
+  test_that(status == alg__status_no_soln);
+
+  alg__free_matrix(c);
+  alg__free_matrix(x);
+  alg__free_matrix(b);
+  alg__free_matrix(A);
+
+  return test_success;
+}
+
 int main(int argc, char **argv) {
   set_verbose(0);  // Set this to 1 while debugging a test.
   start_all_tests(argv[0]);
   run_tests(test_basic_ops, test_QR,
             test_lp_pt1, test_lp_pt2, test_l2_min,
-            test_l2_error_cases);
+            test_l2_error_cases, test_no_soln_cases);
   return end_all_tests();
 }

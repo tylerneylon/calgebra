@@ -15,6 +15,13 @@
 
 #define tol 1e-6
 
+#define unbdd_soln_str "The solution set is unbounded."
+
+
+// Public globals.
+
+const char *alg__err_str = NULL;
+
 
 // Internal types.
 
@@ -86,7 +93,10 @@ alg__Status apply_lp(alg__Mat tab, Phase phase) {
         pivot_ratio = r_ratio;
       }
     }
-    if (pivot_row == -1) return alg__status_unbdd_soln;
+    if (pivot_row == -1) {
+      alg__err_str = unbdd_soln_str;
+      return alg__status_unbdd_soln;
+    }
 
     //printf("pivot is (0-indexed) row=%d, col=%d\n", pivot_row, pivot_col);
     make_col_a_01_col(tab, pivot_row, pivot_col);
@@ -145,8 +155,8 @@ char *alg__matrix_as_str(alg__Mat M) {
 
 float alg__dot_prod(alg__Mat A, int i, alg__Mat B, int j) {
   if (num_rows(A) != num_rows(B)) {
-    fprintf(stderr, "Error: expected A,B to have equal num_rows.\n");
-    return 0.0;
+    alg__err_str = "Expected A, B to have the same #rows.";
+    return 0.0 / 0.0;  // If NaN is supported, it is returned here.
   }
   float sum = 0;
   for (int k = 0; k < num_rows(A); ++k) {
@@ -174,20 +184,26 @@ float alg__norm(alg__Mat A, int i) {
 
 // 3. Decompositions.
 
-void alg__QR(alg__Mat Q, alg__Mat R) {
+alg__Status alg__QR(alg__Mat Q, alg__Mat R) {
   if (num_rows(Q) < num_cols(Q)) {
-    fprintf(stderr, "Error: expected a tall or square matrix for QR decomp.\n");
-    return;
+    alg__err_str = "Expected alg__QR input to be a tall or square matrix.";
+    return alg__status_input_error;
   }
+  alg__Status status = alg__status_ok;
   // Q starts off as an arbitrary tall-or-square matrix A.
   for (int i = 0; i < num_cols(Q); ++i) {
     float norm = alg__norm(Q, i);
+    if (norm == 0) {
+      status = alg__status_lin_dep;
+      continue;
+    }
     alg__scale(1.0 / norm, Q, i);
     for (int j = i + 1; j < num_cols(Q); ++j) {
       float dot_prod = alg__dot_prod(Q, i, Q, j);
       alg__mul_and_add(-dot_prod, Q, i, Q, j);
     }
   }
+  return status;
   // TODO Save the R values. This is not needed for L2-min, though.
 }
 
@@ -227,15 +243,15 @@ alg__Status alg__l1_min(alg__Mat A, alg__Mat b, alg__Mat x) {
 
 alg__Status alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
   if (x == NULL) {
-    fprintf(stderr, "Error: expected output matrix x to be pre-allocated.\n");
+    alg__err_str = "The matrix x is expected to be pre-allocated.";
     return alg__status_input_error;
   }
   if (num_rows(A) != num_rows(b)) {
-    fprintf(stderr, "Error: A and b must have the same number of rows.\n");
+    alg__err_str = "A and b must have the same number of rows.";
     return alg__status_input_error;
   }
   if (num_cols(A) != num_rows(x) || num_cols(x) != 1) {
-    fprintf(stderr, "Error: expected x to have size #cols(A) x 1.\n");
+    alg__err_str = "x is expected to have size #cols(A) x 1.";
     return alg__status_input_error;
   }
 
@@ -247,7 +263,13 @@ alg__Status alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
   for (int i = 0; i < num_cols(A); ++i) {
     float a_i_q_i = alg__dot_prod(A, i, Q, i);
     float a_i_x   = alg__dot_prod(A, i, x, 0);
-    float alpha = (col_elt(b, i) - a_i_x) / a_i_q_i;
+    float diff    = col_elt(b, i) - a_i_x;
+    if (diff == 0) continue;  // Don't worry about a_i_q_i = 0 in this case.
+    if (a_i_q_i == 0) {
+      alg__err_str = "The solution set is empty.";
+      return alg__status_no_soln;
+    }
+    float alpha = diff / a_i_q_i;
     alg__mul_and_add(alpha, Q, i, x, 0);
   }
 
@@ -271,12 +293,12 @@ alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
   if (num_rows(A) != num_rows(b) ||
       num_cols(A) != num_rows(x) ||
       num_cols(A) != num_rows(c)) {
-    fprintf(stderr, "Error: input size mismatch seen in alg__run_lp.\n");
+    alg__err_str = "The input sizes of A, b, x, c do not all match.";
     return alg__status_input_error;
   }
   // Check that x, b, and c are single-column matrices.
   if (num_cols(x) != 1 || num_cols(b) != 1 || num_cols(c) != 1) {
-    fprintf(stderr, "Error: expected x, b, and c to be single-column matrices in alg__run_lp.\n");
+    alg__err_str = "x, b, and c are all expected to be single-column matrices.";
     return alg__status_input_error;
   }
 
@@ -340,7 +362,10 @@ alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
   //printf("After phase 1, tableau is:\n%s", alg__matrix_as_str(tab1));
 
   // Check if an initial feasible solution was found.
-  if (fabs(elt(tab1, 0, num_cols(tab1) - 1)) > tol) return alg__status_no_soln;
+  if (fabs(elt(tab1, 0, num_cols(tab1) - 1)) > tol) {
+    alg__err_str = "There are no solutions x with Ax=b and x>=0.";
+    return alg__status_no_soln;
+  }
 
   // Phase 2.
   alg__Mat tab2 = alg__alloc_matrix(num_rows(A) + 1, num_cols(A) + 2);

@@ -21,8 +21,13 @@ typedef enum {
   alg__status_ok,
   alg__status_no_soln,
   alg__status_unbdd_soln,
-  alg__status_input_error
+  alg__status_input_error,
+  alg__status_lin_dep
 } alg__Status;
+
+// The most recent error message is stored here.  This is set
+// whenever a status other than alg__status_ok is returned
+extern const char *alg__err_str;
 
 // 1. Create. copy, destroy, or print a matrix.
 
@@ -34,8 +39,8 @@ void     alg__free_matrix   (alg__Mat M);
 char *   alg__matrix_as_str (alg__Mat M);
 
 // 2. Basic matrix operations.
+//
       // In the comments, we use A[i] to mean the ith column of A.
-
  
       // Use alg__elt(A, i, j) as either a value or variable (r- or l-value).
 #define  alg__elt(A, i, j) \
@@ -58,7 +63,7 @@ float    alg__norm                 (alg__Mat A, int i);
 // 3. Decompositions.
 
       // Provide a reduced QR decomposition; R may be NULL to ignore it.
-void     alg__QR (alg__Mat A_to_Q, alg__Mat R);
+alg__Status alg__QR (alg__Mat A_to_Q, alg__Mat R);
 
 // 4. Optimizations.
 
