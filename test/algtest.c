@@ -168,10 +168,33 @@ int test_l2_min() {
   return test_success;
 }
 
+int test_l2_error_cases() {
+  alg__Mat A = alg__alloc_matrix(1, 1);
+  alg__Mat b = alg__alloc_matrix(2, 1);
+  alg__Mat x = alg__alloc_matrix(2, 1);
+
+  alg__Status status;
+
+  status = alg__l2_min(A, b, x);
+  test_that(status == alg__status_input_error);
+
+  alg__free_matrix(A);
+  A = alg__alloc_matrix(2, 2);
+
+  status = alg__l2_min(A, b, NULL);
+  test_that(status == alg__status_input_error);
+
+  status = alg__l2_min(A, b, x);
+  test_that(status == alg__status_ok);
+
+  return test_success;
+}
+
 int main(int argc, char **argv) {
   set_verbose(0);  // Set this to 1 while debugging a test.
   start_all_tests(argv[0]);
   run_tests(test_basic_ops, test_QR,
-            test_lp_pt1, test_lp_pt2, test_l2_min);
+            test_lp_pt1, test_lp_pt2, test_l2_min,
+            test_l2_error_cases);
   return end_all_tests();
 }

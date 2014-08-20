@@ -226,16 +226,16 @@ alg__Status alg__l1_min(alg__Mat A, alg__Mat b, alg__Mat x) {
 }
 
 alg__Status alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
+  if (x == NULL) {
+    fprintf(stderr, "Error: expected output matrix x to be pre-allocated.\n");
+    return alg__status_input_error;
+  }
   if (num_rows(A) != num_rows(b)) {
     fprintf(stderr, "Error: A and b must have the same number of rows.\n");
     return alg__status_input_error;
   }
   if (num_cols(A) != num_rows(x) || num_cols(x) != 1) {
     fprintf(stderr, "Error: expected x to have size #cols(A) x 1.\n");
-    return alg__status_input_error;
-  }
-  if (x == NULL) {
-    fprintf(stderr, "Error: expected output matrix x to be pre-allocated.\n");
     return alg__status_input_error;
   }
 
