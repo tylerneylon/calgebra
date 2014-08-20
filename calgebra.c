@@ -23,15 +23,20 @@
 const char *alg__err_str = NULL;
 
 
-// Internal types.
+// Internal types and globals.
 
 typedef enum {
   phase1,
   phase2
 } Phase;
 
+static int dbg_verbosity = 0;
 
 // Internal functions.
+
+#define dbg_printf(...) if (dbg_verbosity > 0) printf(__VA_ARGS__)
+#define dbg_print_matrix(m) \
+  if (dbg_verbosity > 0) { char *s = alg__matrix_as_str(m); printf("%s", s); free(s); }
 
 #define data_size(nrows, ncols) (sizeof(float) * nrows * ncols)
 #define num_cols(A) (A->is_transposed ? A->nrows : A->ncols)
@@ -42,7 +47,7 @@ typedef enum {
 // This sets the given entry to 1 by scaling its row
 // and clears the rest of its column with row operations.
 // The given entry is expected to be nonzero.
-void make_col_a_01_col(alg__Mat A, int row, int col) {
+static void make_col_a_01_col(alg__Mat A, int row, int col) {
   // Normalize the row so that A_{row,col} = 1.
   float scale = 1.0 / elt(A, row, col);
   A->is_transposed = true;
@@ -62,9 +67,12 @@ void make_col_a_01_col(alg__Mat A, int row, int col) {
   A->is_transposed = false;
 }
 
-alg__Status apply_lp(alg__Mat tab, Phase phase) {
+static alg__Status apply_lp(alg__Mat tab, Phase phase) {
 
-  //printf("At start of apply_lp, tab:\n%s", alg__matrix_as_str(tab));
+  dbg_printf("At start of apply_lp (phase %d), tableau is:\n",
+             phase == phase1 ? 1 : 2);
+  dbg_print_matrix(tab);
+
 
   int pivot_row_start = (phase == phase1 ? 2 : 1);
   int last_col = num_cols(tab) - 1;
@@ -73,7 +81,8 @@ alg__Status apply_lp(alg__Mat tab, Phase phase) {
   if (phase == phase1) {
     for (int c = 2; c < num_rows(tab); ++c) {
       make_col_a_01_col(tab, c, c);
-      //printf("After clearing column %d, tableau is:\n%s", c, alg__matrix_as_str(tab));
+      dbg_printf("After clearing column %d, tableau is:\n", c);
+      dbg_print_matrix(tab);
     }
   }
 
@@ -98,9 +107,10 @@ alg__Status apply_lp(alg__Mat tab, Phase phase) {
       return alg__status_unbdd_soln;
     }
 
-    //printf("pivot is (0-indexed) row=%d, col=%d\n", pivot_row, pivot_col);
+    dbg_printf("pivot is (0-indexed) row=%d, col=%d\n", pivot_row, pivot_col);
     make_col_a_01_col(tab, pivot_row, pivot_col);
-    //printf("After one iteration, the tableau is:\n%s", alg__matrix_as_str(tab));
+    dbg_printf("After an iteration, the tableau is:\n");
+    dbg_print_matrix(tab);
   }
 }
 
@@ -282,12 +292,12 @@ alg__Status alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
 
 alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
 
-  //printf("\n");
-  //printf("A is %dx%d, b is %dx%d, x is %dx%d, c is %dx%d\n",
-  //       num_rows(A), num_cols(A),
-  //       num_rows(b), num_cols(b),
-  //       num_rows(x), num_cols(x),
-  //       num_rows(c), num_cols(c));
+  dbg_printf("\n");
+  dbg_printf("A is %dx%d, b is %dx%d, x is %dx%d, c is %dx%d\n",
+             num_rows(A), num_cols(A),
+             num_rows(b), num_cols(b),
+             num_rows(x), num_cols(x),
+             num_rows(c), num_cols(c));
 
   // Check that the size of A matches b, x, and c.
   if (num_rows(A) != num_rows(b) ||
@@ -302,15 +312,15 @@ alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
     return alg__status_input_error;
   }
 
-  // TEMP
-  //printf("A:\n%s", alg__matrix_as_str(A));
-  //printf("b:\n%s", alg__matrix_as_str(b));
-  //printf("x:\n%s", alg__matrix_as_str(x));
-  //printf("c:\n%s", alg__matrix_as_str(c));
+  dbg_printf("A:\n"); dbg_print_matrix(A);
+  dbg_printf("b:\n"); dbg_print_matrix(b);
+  dbg_printf("x:\n"); dbg_print_matrix(x);
+  dbg_printf("c:\n"); dbg_print_matrix(c);
 
 
   // Phase 1.
   alg__Mat tab1 = alg__alloc_matrix(num_rows(A) + 2, num_cols(A) + num_rows(A) + 3);
+  alg__Mat tab2 = alg__alloc_matrix(num_rows(A) + 1, num_cols(A) + 2);
   // Set up the artificial variable cost row = the top row in tab1.
   for (int col = 0; col < num_cols(tab1); ++col) {
     float val = (col == 0 ? 1 : 0);
@@ -347,19 +357,18 @@ alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
       }
       // Negate each row with b_i < 0 to keep the final column nonnegative.
       if (col_elt(b, row - 2) < 0 && val) val *= -1;
-      //printf("Setting tab1_{%d, %d} to %g\n", row, col, val);
       elt(tab1, row, col) = val;
     }
   }
 
-  // TEMP
-  //printf("tableau for phase 1:\n%s", alg__matrix_as_str(tab1));
+  dbg_printf("tableau for phase 1:\n");
+  dbg_print_matrix(tab1);
 
   alg__Status status = apply_lp(tab1, phase1);
-  // We might have an unbounded solution set; return early if so.
-  if (status) return status;
+  if (status != alg__status_ok) goto end_lp;  // It may be an unbounded solution set.
 
-  //printf("After phase 1, tableau is:\n%s", alg__matrix_as_str(tab1));
+  dbg_printf("After phase 1, tableau is:\n");
+  dbg_print_matrix(tab1);
 
   // Check if an initial feasible solution was found.
   if (fabs(elt(tab1, 0, num_cols(tab1) - 1)) > tol) {
@@ -368,7 +377,6 @@ alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
   }
 
   // Phase 2.
-  alg__Mat tab2 = alg__alloc_matrix(num_rows(A) + 1, num_cols(A) + 2);
   // Copy over the submatrix of tab1 that we will continue working with.
   for (int row = 0; row < num_rows(tab2); ++row) {
     for (int col = 0; col < num_cols(tab2); ++col) {
@@ -379,12 +387,14 @@ alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
     }
   }
 
-  // TEMP
-  //printf("phase 2 tableau is starting as:\n%s", alg__matrix_as_str(tab2));
+  dbg_printf("phase 2 tableau is starting as:\n");
+  dbg_print_matrix(tab2);
 
-  apply_lp(tab2, phase2);
+  status = apply_lp(tab2, phase2);
+  if (status != alg__status_ok) goto end_lp;  // It may be an unbounded solution set.
 
-  //printf("After phase 2, tableau is:\n%s", alg__matrix_as_str(tab2));
+  dbg_printf("After phase 2, tableau is:\n");
+  dbg_print_matrix(tab2);
 
   // Copy the result out to x and clean up.
   for (int c = 0; c < num_cols(x); ++c) col_elt(x, c) = 0;
@@ -407,12 +417,13 @@ alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
     }
   }
 
-  // TEMP
-  //printf("x:\n%s", alg__matrix_as_str(x));
+  dbg_printf("x:\n");
+  dbg_print_matrix(x);
 
+end_lp:
   alg__free_matrix(tab2);
   alg__free_matrix(tab1);
 
-  return alg__status_ok;
+  return status;
 }
 

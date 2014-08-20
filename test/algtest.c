@@ -220,11 +220,47 @@ int test_no_soln_cases() {
   return test_success;
 }
 
+int test_lp_errors() {
+  // The no solution case is tested in
+  // test_no_soln_cases.
+
+  // Test a problem instance with an unbounded
+  // solution set.
+  // Ax=b, x>=0, minimize -(x_1 + x_2). A=(1 0) b=1.
+  // Then x=(1 y)^T is a solution for any y,
+  // and the minimized value gets smallyer as y increases.
+
+  alg__Mat A = alg__alloc_matrix(1, 2);
+  A->data[0] = 1;
+  A->data[1] = 0;
+
+  alg__Mat b = alg__alloc_matrix(1, 1);
+  *b->data = 1;
+
+  alg__Mat c = alg__alloc_matrix(2, 1);
+  c->data[0] = -1;
+  c->data[1] = -1;
+
+  alg__Mat x = alg__alloc_matrix(2, 1);
+
+  alg__Status status = alg__run_lp(A, b, x, c);
+
+  test_that(status == alg__status_unbdd_soln);
+
+  alg__free_matrix(x);
+  alg__free_matrix(c);
+  alg__free_matrix(b);
+  alg__free_matrix(A);
+
+  return test_success;
+}
+
 int main(int argc, char **argv) {
   set_verbose(0);  // Set this to 1 while debugging a test.
   start_all_tests(argv[0]);
   run_tests(test_basic_ops, test_QR,
             test_lp_pt1, test_lp_pt2, test_l2_min,
-            test_l2_error_cases, test_no_soln_cases);
+            test_l2_error_cases, test_no_soln_cases,
+            test_lp_errors);
   return end_all_tests();
 }
