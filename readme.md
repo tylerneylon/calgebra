@@ -5,8 +5,9 @@
 This is a small, fast library focused on solving the
 following linear problems:
 
-* L2-minimization, aka *least squares*,
-* L1-minimization, and
+* L<sup>2</sup>-minimization, aka *least squares*,
+* L<sup>1</sup>-minimization,
+* L<sup>∞</sup>-minimization, and
 * general linear programming problems.
 
 These problems and the algorithms used
@@ -14,7 +15,7 @@ are described in more detail below.
 
 ## Problem types and algorithms used
 
-### L2-minimization
+### L<sup>2</sup>-minimization
 
 Given input matrix *A* and column vector *b*, find
 column vector *x* so that:
@@ -39,7 +40,7 @@ Internally, `calgebra` uses a modified Gram-Schmidt
 [QR decomposition](http://en.wikipedia.org/wiki/QR_decomposition)
 to perform the projection onto the row span of *A*.
 
-### L1-minimization
+### L<sup>1</sup>-minimization
 
 This is the same as L2-minimization, except that we
 minimize ||*x*||<sub>1</sub> instead of ||*x*||<sub>2</sub>.
@@ -54,7 +55,27 @@ You can solve this in `calgebra` by using the
 `alg__l1_min` function; a usage example is given below.
 
 Internally, this problem is reduced to a general
-linear program, described next.
+linear program, described below.
+
+### L<sup>∞</sup>-minimization
+
+Given input matrix *A* and column vector *b*, find
+column vector *x* so that:
+
+* *Ax=b*, and
+* ||*x*||<sub>∞</sub> is minimized.
+
+As a reminder, for the vector
+*x* = (*x<sub>1</sub>, x<sub>2</sub>, .., x<sub>n</sub>*),
+the value of ||*x*||<sub>∞</sub> is simply the maximum
+|*x<sub>i</sub>*| over all *i*; that is, it's the maximum
+absolute value of all the coordinates of *x*.
+
+You can solve this in `calgebra` by using the
+`alg__linf_min` function; a usage example is given below.
+
+Similar to the L<sup>1</sup> case, this problem is internally
+reduced to a general linear program, described next.
 
 ### General linear programming
 
@@ -73,7 +94,7 @@ believed to be the fastest for most practical applications.
 
 ## Examples
 
-### L1- and L2-minimization example
+### L<sup>1</sup>- and L<sup>2</sup>-minimization example
 
 In the example below, we call several key functions:
 
@@ -99,11 +120,11 @@ taken into consideration).
 // For this set, x = (1 1 0)^T minimizes ||x||_1.
 
 alg__Mat A = alg__alloc_matrix(2, 3);
-memcpy(A->data, ((float[])
-       {  4,  4,  1,
-          8,  0,  1 }), 6 * sizeof(float));
+alg__set_matrix(A,  4,  4,  1,
+                    8,  0,  1 );
+
 alg__Mat b = alg__alloc_matrix(2, 1);
-memcpy(b->data, ((float[]){  8,  8 }), 2 * sizeof(float));
+alg__set_matrix(b, 8, 8);
 alg__Mat x = alg__alloc_matrix(3, 1);
 
 alg__Status status;
@@ -123,6 +144,9 @@ alg__free_matrix(b);
 alg__free_matrix(A);
 ```
 
+The L<sup>∞</sup> case can be handled with the same code,
+using `alg__linf_min` in place of `alg__l1_min` or `alg__l2_min`.
+
 
 ### Linear programming example
 
@@ -131,16 +155,15 @@ to solve a linear program.
 
 ```
 alg__Mat A = alg__alloc_matrix(3, 5);
-memcpy(A->data, ((float[])
-      {  1,  0,  0,  0,  1,
-         0,  1,  0,  4, -5,
-         0,  0,  1, -4,  1}), 3 * 5 * sizeof(float));
+alg__set_matrix(A,  1,  0,  0,  0,  1,
+                    0,  1,  0,  4, -5,
+                    0,  0,  1, -4,  1 );
 
 alg__Mat b = alg__alloc_matrix(3, 1);
-memcpy(b->data, ((float[]){ 7, -7, -5 }), 3 * sizeof(float));
+alg__set_matrix(b, 7, -7, -5);
 
 alg__Mat c = alg__alloc_matrix(5, 1);
-memcpy(c->data, ((float[]){ 0, 0, 0, 3, 2 }), 5 * sizeof(float));
+alg__set_matrix(c, 0, 0, 0, 3, 2);
 
 alg__Mat x = alg__alloc_matrix(5, 1);
 
