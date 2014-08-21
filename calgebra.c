@@ -114,6 +114,22 @@ static alg__Status apply_lp(alg__Mat tab, Phase phase) {
   }
 }
 
+// Accepts a matrix A and allocates a new one, A2, that's caller-owned.
+// Each implied variable x_i of A, corresponding to each column of A,
+// is split into a positive and negative part: x_i = x^+_i - x^-_i in A2.
+// So A2 is twice is wide as A. A2 is the return value.
+static alg__Mat convert_to_restricted_vars(alg__Mat A) {
+  alg__Mat A2 = alg__alloc_matrix(num_rows(A), 2 * num_cols(A));
+  for (int r = 0; r < num_rows(A); ++r) {
+    for (int c = 0; c < num_cols(A); ++c) {
+      float src_val = elt(A, r, c);
+      elt(A2, r, 2 * c + 0) =  src_val;
+      elt(A2, r, 2 * c + 1) = -src_val;
+    }
+  }
+  return A2;
+}
+
 
 // Public functions.
 
@@ -224,14 +240,7 @@ alg__Status alg__QR(alg__Mat Q, alg__Mat R) {
 // 4. Optimizations.
 
 alg__Status alg__l1_min(alg__Mat A, alg__Mat b, alg__Mat x) {
-  alg__Mat A2 = alg__alloc_matrix(num_rows(A), 2 * num_cols(A));
-  for (int r = 0; r < num_rows(A); ++r) {
-    for (int c = 0; c < num_cols(A); ++c) {
-      float src_val = elt(A, r, c);
-      elt(A2, r, 2 * c + 0) =  src_val;
-      elt(A2, r, 2 * c + 1) = -src_val;
-    }
-  }
+  alg__Mat A2 = convert_to_restricted_vars(A);
 
   alg__Mat c = alg__alloc_matrix(num_cols(A2), 1);
   for (int r = 0; r < num_rows(c); ++r) col_elt(c, r) = 1;
@@ -295,8 +304,95 @@ alg__Status alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
 }
 
 alg__Status alg__linf_min (alg__Mat A, alg__Mat b, alg__Mat x) {
-  // TODO Implement.
-  return alg__status_ok;
+
+  if (x == NULL) {
+    alg__err_str = "The matrix x is expected to be pre-allocated.";
+    return alg__status_input_error;
+  }
+  if (num_rows(A) != num_rows(b)) {
+    alg__err_str = "A and b must have the same number of rows.";
+    return alg__status_input_error;
+  }
+  if (num_cols(A) != num_rows(x) || num_cols(x) != 1) {
+    alg__err_str = "x is expected to have size #cols(A) x 1.";
+    return alg__status_input_error;
+  }
+
+  // We convert A -> A2 -> A3. The first conversion is only
+  // to convert unrestricted to restricted variables.
+  // That is, the user didn't say x >= 0 but LP uses that constraint,
+  // so we wrap our application of LP to meet the user's expectations.
+  alg__Mat A2 = convert_to_restricted_vars(A);
+
+  // Our approach is to add one slack variable s_i for each
+  // variable x_i in A2, and another variable t to measure ||x||_inf.
+  // The added inequalities correspond to x_i <= t, captured
+  // by the slack variables as s_i = t - x_i >= 0, and sent in
+  // as x_i + s_i - t = 0.
+  // This is captured in the augmented matrices A3 and b3:
+  //
+  //        <x> <s> <t>    b3:
+  //  A3 = ( A2  0   0 )  ( b )
+  //       ( I   I  -1 )  ( 0 )
+  //
+  // (There is no b2; I use the name b3 for consistency with A3.)
+
+  // Set up the augmented parameter matrix A3.
+  int nr = num_rows(A2);
+  int nc = num_cols(A2);
+  alg__Mat A3 = alg__alloc_matrix(nr + nc, 2 * nc + 1);
+  memset(A3->data, 0, num_rows(A3) * num_cols(A3) * sizeof(float));
+
+  // Set A2 as a submatrix of A3.
+  for (int r = 0; r < nr; ++r) {
+    for (int c = 0; c < nc; ++c) {
+      elt(A3, r, c) = elt(A2, r, c);
+    }
+  }
+  // Set up the two identity (I) submatrices of A3.
+  for (int r = 0; r < nc; ++r) {
+    elt(A3, r + nr, r +  0) = 1;
+    elt(A3, r + nr, r + nc) = 1;
+  }
+  // Set up the -1 column of A3.
+  for (int r = nr; r < num_rows(A3); ++r) {
+    elt(A3, r, num_cols(A3) - 1) = -1;
+  }
+
+  // Set up b3, the augmented version of b.
+  alg__Mat b3 = alg__alloc_matrix(nr + nc, 1);
+  for (int r = 0; r < num_rows(b3); ++r) {
+    col_elt(b3, r) = (r < nr ? col_elt(b, r) : 0);
+  }
+
+  // Set up c3, the cost matrix. The cost is simply the value of t.
+  alg__Mat c3 = alg__alloc_matrix(num_cols(A3), 1);
+  memset(c3->data, 0, num_rows(c3) * sizeof(float));
+  col_elt(c3, num_rows(c3) - 1) = 1;
+
+  // Set up x3.
+  alg__Mat x3 = alg__alloc_matrix(num_cols(A3), 1);
+
+  alg__Status status = alg__run_lp(A3, b3, x3, c3);
+  if (status != alg__status_ok) goto end_linf;
+
+  // Copy out the user-facing values from x3.
+  for (int r = 0; r < num_rows(x); ++r) {
+    col_elt(x, r) = col_elt(x3, 2 * r) - col_elt(x3, 2 * r + 1);
+  }
+
+  dbg_printf("x:\n");
+  dbg_print_matrix(x);
+
+end_linf:
+
+  alg__free_matrix(x3);
+  alg__free_matrix(c3);
+  alg__free_matrix(b3);
+  alg__free_matrix(A3);
+  alg__free_matrix(A2);
+
+  return status;
 }
 
 alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {

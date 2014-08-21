@@ -315,7 +315,7 @@ int test_linf_min() {
   test_that(status == alg__status_ok);
   
   test_that(fabs(alg__elt(x, 0, 0) - -1) < 0.001);
-  test_that(fabs(alg__elt(x, 1, 0) -  0) < 0.001);
+  test_that(fabs(alg__elt(x, 1, 0) -  1) < 0.001);
 
   return test_success;
 }
