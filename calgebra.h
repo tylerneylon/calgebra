@@ -27,11 +27,19 @@ typedef enum {
 // whenever a status other than alg__status_ok is returned
 extern const char *alg__err_str;
 
-// 1. Create. copy, destroy, or print a matrix.
+// 1. Matrix setup, cleanup, and printing.
 
 alg__Mat alg__alloc_matrix  (int nrows, int ncols);
 alg__Mat alg__copy_matrix   (alg__Mat orig);
 void     alg__free_matrix   (alg__Mat M);
+
+      // Send in the values as a comma-separated list. Example:
+      //     alg__Mat A = alg__alloc_matrix(2, 3);
+      //     alg__set_matrix(A, 1, 2, 3,
+      //                        4, 5, 6 );
+#define  alg__set_matrix(M, ...) \
+  { float v[] = { __VA_ARGS__ }; \
+  memcpy(M->data, v, sizeof(v)); }
 
       // Returns a newly-allocated string; caller must free it.
 char *   alg__matrix_as_str (alg__Mat M);

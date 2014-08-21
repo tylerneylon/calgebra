@@ -16,11 +16,10 @@ int test_basic_ops() {
   //  A = ( 1 )    B = ( -2 )
   //      ( 3 )        (  0 )
   alg__Mat A = alg__alloc_matrix(2, 1);
-  // TODO Enable a better initialization construct.
-  memcpy(A->data, ((float[]){ 1, 3 }), 2 * sizeof(float));
+  alg__set_matrix(A, 1, 3);
 
   alg__Mat B = alg__alloc_matrix(2, 1);
-  memcpy(B->data, ((float[]){ -2, 0}), 2 * sizeof(float));
+  alg__set_matrix(B, -2, 0);
 
   // Test alg__elt.
   test_that(alg__elt(A, 0, 0) == 1);
@@ -72,18 +71,16 @@ int test_basic_ops() {
 
 int test_QR() {
   alg__Mat A = alg__alloc_matrix(2, 2);
-  memcpy(A->data, ((float[])
-         { -5,  2,
-            0,  6  }), 4 * sizeof(float));
+  alg__set_matrix(A, -5,  2,
+                      0,  6 );
   alg__QR(A, NULL);
 
   test_that(fabs(alg__elt(A, 0, 0)) == 1);
   test_that(     alg__elt(A, 1, 0)  == 0);
   test_that(fabs(alg__elt(A, 1, 1)) == 1);
 
-  memcpy(A->data, ((float[])
-         {  1,  9,
-            1,  7  }), 4 * sizeof(float));
+  alg__set_matrix(A,  1,  9,
+                      1,  7 );
   alg__QR(A, NULL);
 
   float x = fabs(alg__elt(A, 0, 0));
@@ -92,9 +89,8 @@ int test_QR() {
   test_that(fabs(alg__norm(A, 0) - 1)       < 0.001);
   test_that(fabs(alg__norm(A, 1) - 1)       < 0.001);
 
-  memcpy(A->data, ((float[])
-         {  3, -6,
-            4, 17  }), 4 * sizeof(float));
+  alg__set_matrix(A,  3, -6,
+                      4, 17 );
   alg__Mat R = alg__alloc_matrix(2, 2);
   alg__QR(A, R);
 
@@ -122,13 +118,13 @@ int test_QR() {
 
 int test_lp_pt1() {
   alg__Mat A = alg__alloc_matrix(1, 2);
-  memcpy(A->data, ((float[]){ 1, 5 }), 2 * sizeof(float));
+  alg__set_matrix(A, 1, 5);
 
   alg__Mat b = alg__alloc_matrix(1, 1);
-  memcpy(b->data, ((float[]){ 5 }), sizeof(float));
+  alg__set_matrix(b, 5);
 
   alg__Mat c = alg__alloc_matrix(2, 1);
-  memcpy(c->data, ((float[]){ 1, 1 }), 2 * sizeof(float));
+  alg__set_matrix(c, 1, 1);
 
   alg__Mat x = alg__alloc_matrix(2, 1);
 
@@ -144,16 +140,15 @@ int test_lp_pt1() {
 
 int test_lp_pt2() {
   alg__Mat A = alg__alloc_matrix(3, 5);
-  memcpy(A->data, ((float[])
-        {  1,  0,  0,  0,  1,
-           0,  1,  0,  4, -5,
-           0,  0,  1, -4,  1}), 3 * 5 * sizeof(float));
+  alg__set_matrix(A,  1,  0,  0,  0,  1,
+                      0,  1,  0,  4, -5,
+                      0,  0,  1, -4,  1 );
 
   alg__Mat b = alg__alloc_matrix(3, 1);
-  memcpy(b->data, ((float[]){ 7, -7, -5 }), 3 * sizeof(float));
+  alg__set_matrix(b, 7, -7, -5);
 
   alg__Mat c = alg__alloc_matrix(5, 1);
-  memcpy(c->data, ((float[]){ 0, 0, 0, 3, 2 }), 5 * sizeof(float));
+  alg__set_matrix(c, 0, 0, 0, 3, 2);
 
   alg__Mat x = alg__alloc_matrix(5, 1);
 
@@ -173,11 +168,10 @@ int test_lp_pt2() {
 int test_l2_min() {
   // Set a matrix with rows orthogonal to (1 -1 -1).
   alg__Mat A = alg__alloc_matrix(2, 3);
-  memcpy(A->data, ((float[])
-         {  5,  2,  3,
-            1,  4, -3 }), 6 * sizeof(float));
+  alg__set_matrix(A,  5,  2,  3,
+                      1,  4, -3 );
   alg__Mat b = alg__alloc_matrix(2, 1);
-  memcpy(b->data, ((float[]){  7,  5 }), 2 * sizeof(float));
+  alg__set_matrix(b, 7, 5);
   alg__Mat x = alg__alloc_matrix(3, 1);
 
   alg__l2_min(A, b, x);
@@ -285,11 +279,10 @@ int test_l1_min() {
   //     (8 0 1)      (8)
   // For this set, x = (1 1 0)^T minimizes ||x||_1.
   alg__Mat A = alg__alloc_matrix(2, 3);
-  memcpy(A->data, ((float[])
-         {  4,  4,  1,
-            8,  0,  1 }), 6 * sizeof(float));
+  alg__set_matrix(A,  4,  4,  1,
+                      8,  0,  1 );
   alg__Mat b = alg__alloc_matrix(2, 1);
-  memcpy(b->data, ((float[]){  8,  8 }), 2 * sizeof(float));
+  alg__set_matrix(b, 8, 8);
   alg__Mat x = alg__alloc_matrix(3, 1);
 
   alg__Status status = alg__l1_min(A, b, x);
