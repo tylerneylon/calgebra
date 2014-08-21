@@ -294,6 +294,11 @@ alg__Status alg__l2_min(alg__Mat A, alg__Mat b, alg__Mat x) {
   return alg__status_ok;
 }
 
+alg__Status alg__linf_min (alg__Mat A, alg__Mat b, alg__Mat x) {
+  // TODO Implement.
+  return alg__status_ok;
+}
+
 alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
 
   dbg_printf("\n");

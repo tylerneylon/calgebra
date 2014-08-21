@@ -73,15 +73,16 @@ alg__Status alg__QR (alg__Mat A_to_Q, alg__Mat R);
 
 // 4. Optimizations.
 
-// The next two functions solve this problem for p=1 or p=2:
+// The next three functions solve this problem for p=1, 2, or infinity:
 //    Find x which gives    min ||x||_p
 //    with the constraint   Ax = b.
 // The output x should be pre-allocated, including memory for the data.
 
-alg__Status alg__l1_min (alg__Mat A, alg__Mat b, alg__Mat x);
-alg__Status alg__l2_min (alg__Mat A, alg__Mat b, alg__Mat x);
+alg__Status alg__l1_min   (alg__Mat A, alg__Mat b, alg__Mat x);
+alg__Status alg__l2_min   (alg__Mat A, alg__Mat b, alg__Mat x);
+alg__Status alg__linf_min (alg__Mat A, alg__Mat b, alg__Mat x);
 
 // Solve a general linear programming problem.
 // Specifically, find x that minimizes (c^T * x) with Ax=b, x >= 0.
 // The l1_min function above is a wrapper around this.
-alg__Status alg__run_lp (alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c);
+alg__Status alg__run_lp   (alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c);
