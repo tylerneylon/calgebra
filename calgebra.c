@@ -13,7 +13,7 @@
 #define true  1
 #define false 0
 
-#define tol 1e-6
+#define tol 1e-4
 
 #define unbdd_soln_str "The solution set is unbounded."
 
@@ -88,14 +88,14 @@ static alg__Status apply_lp(alg__Mat tab, Phase phase) {
 
   while (true) {
     int pivot_col = 1;
-    for (; pivot_col < last_col && elt(tab, 0, pivot_col) <= 0; ++pivot_col);
+    for (; pivot_col < last_col && elt(tab, 0, pivot_col) < tol; ++pivot_col);
     if (pivot_col == last_col) return alg__status_ok;
 
     // Now tab_{0, pivot_col} is the 1st positive entry, ignoring tab_0,0, in the top row.
     int   pivot_row = -1;
     float pivot_ratio;
     for (int r = pivot_row_start; r < num_rows(tab); ++r) {
-      if (elt(tab, r, pivot_col) <= 0) continue;
+      if (elt(tab, r, pivot_col) < tol) continue;
       float r_ratio = elt(tab, r, last_col) / elt(tab, r, pivot_col);
       if (pivot_row == -1 || r_ratio < pivot_ratio) {
         pivot_row   = r;
@@ -502,6 +502,7 @@ alg__Status alg__run_lp(alg__Mat A, alg__Mat b, alg__Mat x, alg__Mat c) {
   dbg_print_matrix(tab2);
 
   // Copy the result out to x and clean up.
+  memset(x->data, 0, num_rows(x) * sizeof(float));
   for (int c = 0; c < num_cols(x); ++c) col_elt(x, c) = 0;
   int last_col = num_cols(tab2) - 1;
   for (int c = 1; c < last_col; ++c) {
