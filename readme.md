@@ -150,8 +150,33 @@ using `alg__linf_min` in place of `alg__l1_min` or `alg__l2_min`.
 
 ### Linear programming example
 
-This illustrates use of the `alg__run_lp` function
+This section illustrates use of the `alg__run_lp` function
 to solve a linear program.
+
+Our goal is to find the point *(x, y)* in the following triangle
+which minimizes the value *3x + 2y*.
+
+![](https://raw.githubusercontent.com/tylerneylon/calgebra/master/docs/calgebra_docs1.png)
+
+The sides of the triangle have been marked so we can find
+linear inequalities for each one. A point is in the triangle - boundaries included -
+if and only if all of the inequalities below are true. To capture this as a standardized
+linear programming problem, we introduce the slack variables *s<sub>1</sub>*,
+*s<sub>2</sub>*, and *s<sub>3</sub>*, so that each inequality in *x* and *y* alone
+becomes an *equality* when paired with a slack variable. The same set of
+*(x, y)* points are under consideration, keeping in mind that the slack variables -
+like all variables in a standard linear programming problem - are constrained to
+be nonnegative:
+
+![](https://raw.githubusercontent.com/tylerneylon/calgebra/master/docs/calgebra_docs2.png)
+
+We can find the matrices *A* and *b* based on the right-hand equalities above.
+The value of *c* comes from the coefficients 3 and 2 in the value being minimized,
+*3x + 2y*; since the slack variables are not being minimized, their coefficients in *c*
+are all zero.
+
+Here is the code to solve this linear programming problem using `lin__run_lp`:
+
 
 ```
 alg__Mat A = alg__alloc_matrix(3, 5);
