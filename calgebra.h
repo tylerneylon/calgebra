@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <string.h>
+
 // The element in the ith row and jth column (0-indexed), denoted
 // m_ij, is at data[i * ncols + j]; this is row-major order.
 typedef struct {
