@@ -50,9 +50,9 @@ static int dbg_verbosity = 0;
 static void make_col_a_01_col(alg__Mat A, int row, int col) {
   // Normalize the row so that A_{row,col} = 1.
   float scale = 1.0 / elt(A, row, col);
-  A->is_transposed = true;
+  A->is_transposed = !A->is_transposed;
   alg__scale(scale, A, row);
-  A->is_transposed = false;
+  A->is_transposed = !A->is_transposed;
   elt(A, row, col) = 1;  // Avoid precision errors.
 
   // Zero out all other entries in the col.
